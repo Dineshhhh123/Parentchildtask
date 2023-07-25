@@ -87,24 +87,20 @@ export async function changeChildToParent(req: Request, res: Response): Promise<
     const { nodeName, newParentName } = req.body;
   
     try {
-      // Find the node to be moved (the parent node)
       const parentNode = await Node.findOne({ where: { name: nodeName } });
   
       if (!parentNode) {
         return res.status(404).json({ error: 'Parent node not found.' });
       }
   
-      // Find the new parent node
       const newParentNode = await Node.findOne({ where: { name: newParentName } });
   
       if (!newParentNode) {
         return res.status(404).json({ error: 'New parent node not found.' });
       }
   
-      // Update the parent_id of the parent node to the id of the new parent node
       parentNode.parent_id = newParentNode.id;
   
-      // Save the changes
       await parentNode.save();
   
       return res.json({ message: 'Parent node moved to child successfully.' });
