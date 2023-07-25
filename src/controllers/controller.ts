@@ -82,30 +82,37 @@ export async function changeChildToParent(req: Request, res: Response): Promise<
     }
   }
 
-export async function moveParentToChild(req: Request, res: Response): Promise<void> {
+
+  export const moveParentToChild = async (req: Request, res: Response) => {
+    const { nodeName, newParentName } = req.body;
+  
     try {
-      const { nodeName, newParentName } = req.body;
+      // Find the node to be moved (the parent node)
+      const parentNode = await Node.findOne({ where: { name: nodeName } });
   
-      const node = await Node.findOne({ where: { name: nodeName } });
-      if (!node) {
-        res.status(404).json({ error: 'Node not found' });
+      if (!parentNode) {
+        return res.status(404).json({ error: 'Parent node not found.' });
       }
   
-      const newParent = await Node.findOne({ where: { name: newParentName } });
-      if (!newParent) {
-        res.status(404).json({ error: 'New parent node not found' });
+      // Find the new parent node
+      const newParentNode = await Node.findOne({ where: { name: newParentName } });
+  
+      if (!newParentNode) {
+        return res.status(404).json({ error: 'New parent node not found.' });
       }
   
-      await Node.destroy({ where: { name: newParentName } });
+      // Update the parent_id of the parent node to the id of the new parent node
+      parentNode.parent_id = newParentNode.id;
   
-      node.parent_id = newParent.id;
-      await node.save();
+      // Save the changes
+      await parentNode.save();
   
-      res.json({ message: 'Parent moved to child successfully' });
-    } catch (err) {
-      res.status(500).json({ error: 'Failed to move parent to child' });
+      return res.json({ message: 'Parent node moved to child successfully.' });
+    } catch (error) {
+      console.error('Error moving parent node to child:', error);
+      return res.status(500).json({ error: 'Failed to move parent node to child.' });
     }
-  }
+  };
 
 export async function interchangeChildBetweenParents(req: Request, res: Response): Promise<void> {
     try {
