@@ -1,25 +1,18 @@
-import * as express from 'express';
+import { Router } from 'express';
 import {
-  createNode,
-  parentAndChildExistence,
-  changeParentToChild,
-  changeChildToParent,
-  moveParentToChild,
-  interchangeChildBetweenParents,
+  addParentController,
+  addChildController,
+  interchangeEntitiesController,
+  getAllParentsAndChildren,
 } from '../controllers/controller';
 
-const router = express.Router();
+const router = Router();
 
-router.post('/node', createNode);
+router.post('/parent', addParentController);
+router.post('/child', addChildController);
+router.post('/interchange-children', interchangeEntitiesController);
+router.get('/all-parents-and-children', getAllParentsAndChildren);
 
-router.post('/existence', parentAndChildExistence);
 
-router.post('/change-parent-to-child', changeParentToChild);
-
-router.post('/change-child-to-parent', changeChildToParent);
-
-router.post('/move-parent-to-child', moveParentToChild);
-
-router.post('/interchange-child-between-parents', interchangeChildBetweenParents);
 
 export default router;

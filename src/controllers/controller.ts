@@ -1,135 +1,120 @@
 import { Request, Response } from 'express';
-import Node from '../models/dbschema';
+import Parent from '../models/parentModel';
+import Child from '../models/childModel';
 
-export async function createNode(req: Request, res: Response): Promise<void> {
+export async function addParentController(req: Request, res: Response) {
   try {
-    const { name, parent_id } = req.body;
-    console.log(name)
-    const node = await Node.create({ name, parent_id });
-    console.log(node)
-    res.status(201).json(node);
+    const parent = req.body;
+    console.log(parent)
+    const createdParent = await Parent.create(parent);
+    res.json(createdParent);
   } catch (err) {
-    console.log(err)
-    res.status(500).json({ error: 'Failed to create node' });
+    res.status(500).json({ error: 'Failed to add parent' });
   }
 }
-
-
-
-export async function parentAndChildExistence(req: Request, res: Response): Promise<void> {
+export async function addChildController(req: Request, res: Response) {
   try {
-    const { parentName, childName } = req.body;
-
-    const parent = await Node.findOne({ where: { name: parentName } });
-    if (!parent) {
-      res.status(404).json({ error: 'Parent node not found' });
-    }
-
-    const child = await Node.findOne({ where: { name: childName } });
-    if (!child) {
-      res.status(404).json({ error: 'Child node not found' });
-    }
-
-    res.json({ parentExists: true, childExists: true });
+    const child = req.body;
+    const createdChild = await Child.create(child);
+    res.json(createdChild);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to check existence' });
+    res.status(500).json({ error: 'Failed to add child' });
   }
 }
+export async function interchangeEntitiesController(req: Request, res: Response) {
+  try {
+    const { type,type1,type2,type3, par, newpar,chi,par1,par2,ch,pa } = req.body;
 
-export async function changeParentToChild(req: Request, res: Response): Promise<void> {
-    try {
-      const { nodeName, newParentName } = req.body;
-  
-      const node = await Node.findOne({ where: { name: nodeName } });
-      if (!node) {
-         res.status(404).json({ error: 'Node not found' });
-      }
-  
-      const newParent = await Node.findOne({ where: { name: newParentName } });
-      if (!newParent) {
-        res.status(404).json({ error: 'New parent node not found' });
-      }
-  
-      node.parent_id = newParent.id;
-      await node.save();
-  
-      res.json({ message: 'Parent changed to child successfully' });
-    } catch (err) {
-      res.status(500).json({ error: 'Failed to change parent to child' });
-    }
-  }
+      if (type === 'childToParent') {
+        const child = await Child.findByPk(chi);
+        if (!child) {
+          return res.status(404).json({ error: 'Child not found' });
+        }
 
-export async function changeChildToParent(req: Request, res: Response): Promise<void> {
-    try {
-      const { nodeName, newParentName } = req.body;
-  
-      const node = await Node.findOne({ where: { name: nodeName } });
-      if (!node) {
-        res.status(404).json({ error: 'Node not found' });
+        await Parent.create({ name: child.name });
+        await child.destroy();
       }
+
+      
+      if (type1 === 'parentToChild') {
+        const parent = await Parent.findByPk(par);
+        if (!parent) {
+          return res.status(404).json({ error: 'Parent not found' });
+        }
   
-      const newParent = await Node.findOne({ where: { name: newParentName } });
-      if (!newParent) {
-        res.status(404).json({ error: 'New parent node not found' });
+        const newParentId = newpar;
+        await Child.create({ name: parent.name, parentId: newParentId });
+        await Child.update({ parentId: newParentId }, { where: { parentId: par} });
+        await parent.destroy();
+  
       }
-  
-      node.parent_id = newParent.id;
-      await node.save();
-  
-      res.json({ message: 'Child changed to parent successfully' });
-    } catch (err) {
-      res.status(500).json({ error: 'Failed to change child to parent' });
-    }
-  }
 
 
-  export const moveParentToChild = async (req: Request, res: Response) => {
-    const { nodeName, newParentName } = req.body;
+      if (type2 === 'interchangeChildren') {
+        const existingParent1 = await Parent.findByPk(par1);
+        const existingParent2 = await Parent.findByPk(par2);
+        if (!existingParent1 || !existingParent2) {
+          return res.status(404).json({ error: 'Parents not found' });
+        }
   
-    try {
-      const parentNode = await Node.findOne({ where: { name: nodeName } });
+        const children1 = await Child.findAll({ where: { parentId: par1 } });
+        const children2 = await Child.findAll({ where: { parentId: par2 } });
   
-      if (!parentNode) {
-        return res.status(404).json({ error: 'Parent node not found.' });
+        await Child.update({ parentId: par2 }, { where: { id: children1.map((c) => c.id) } });
+        await Child.update({ parentId: par1 }, { where: { id: children2.map((c) => c.id) } });
+  
       }
-  
-      const newParentNode = await Node.findOne({ where: { name: newParentName } });
-  
-      if (!newParentNode) {
-        return res.status(404).json({ error: 'New parent node not found.' });
-      }
-  
-      parentNode.parent_id = newParentNode.id;
-  
-      await parentNode.save();
-  
-      return res.json({ message: 'Parent node moved to child successfully.' });
-    } catch (error) {
-      console.error('Error moving parent node to child:', error);
-      return res.status(500).json({ error: 'Failed to move parent node to child.' });
-    }
-  };
 
-export async function interchangeChildBetweenParents(req: Request, res: Response): Promise<void> {
-    try {
-      const { nodeName, newParentName } = req.body;
-  
-      const node = await Node.findOne({ where: { name: nodeName } });
-      if (!node) {
-        res.status(404).json({ error: 'Node not found' });
-      }
-  
-      const newParent = await Node.findOne({ where: { name: newParentName } });
-      if (!newParent) {
-        res.status(404).json({ error: 'New parent node not found' });
-      }
-  
-      node.parent_id = newParent.id;
-      await node.save();
-  
-      res.json({ message: 'Child interchanged between parents successfully' });
-    } catch (err) {
-      res.status(500).json({ error: 'Failed to interchange child between parents' });
-    }
-  }
+
+      if (type3 === 'childChangeintoParentToParent') {
         
+        const existingParent2 = await Parent.findByPk(pa);
+        if (!existingParent2) {
+          return res.status(404).json({ error: 'Parents not found' });
+        }
+  
+        const child = await Child.findByPk(ch);
+        if (!child) {
+          return res.status(404).json({ error: 'Child not found' });
+        }
+  
+        if (child.parentId === pa) {
+          return res.status(400).json({ error: 'cannot change child to same parent' });
+        }
+  
+        await Child.update({ parentId: pa }, { where: { id: ch } });
+  
+        return res.json({ message: 'Child changed from one parent to another successfully' });
+      }
+
+      return res.json({ message: 'updated successffully' });
+      
+  
+     
+     
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to update entities' });
+  }
+}
+
+export async function getAllParentsAndChildren(req: Request, res: Response) {
+  try {
+    const [parents, children] = await Promise.all([
+      Parent.findAll(),
+      Child.findAll()
+    ]);
+
+    const data = {
+      parents,
+      children
+    };
+
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to retrieve parents and children' });
+  }
+}
+
+
+
+

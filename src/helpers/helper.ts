@@ -11,3 +11,5 @@ export const sequelize = new Sequelize(DB_CONFIG.database, DB_CONFIG.user, DB_CO
   host: DB_CONFIG.host,
   dialect: 'mysql',
 });
+
+export default sequelize;
